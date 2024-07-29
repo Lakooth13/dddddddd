@@ -1,0 +1,196 @@
+-- Services
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
+-- Utility Functions
+local function createTween(instance, properties, duration, style, direction)
+    local tweenInfo = TweenInfo.new(duration, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)
+    local tween = TweenService:Create(instance, tweenInfo, properties)
+    return tween
+end
+
+local function createInstance(className, properties)
+    local instance = Instance.new(className)
+    for property, value in pairs(properties) do
+        instance[property] = value
+    end
+    return instance
+end
+
+-- UI Elements
+local UI = {}
+
+function UI:CreateWindow(title)
+    local screenGui = createInstance("ScreenGui", {Name = title, ResetOnSpawn = false})
+    local mainFrame = createInstance("Frame", {
+        Parent = screenGui,
+        Name = "MainFrame",
+        Size = UDim2.new(0, 400, 0, 300),
+        Position = UDim2.new(0.5, -200, 0.5, -150),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2.new(0.5, 0.5)
+    })
+
+    local titleLabel = createInstance("TextLabel", {
+        Parent = mainFrame,
+        Name = "TitleLabel",
+        Text = title,
+        Size = UDim2.new(1, 0, 0, 50),
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 24,
+        BorderSizePixel = 0
+    })
+
+    local closeButton = createInstance("TextButton", {
+        Parent = mainFrame,
+        Name = "CloseButton",
+        Text = "X",
+        Size = UDim2.new(0, 50, 0, 50),
+        Position = UDim2.new(1, -50, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(150, 0, 0),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 24,
+        BorderSizePixel = 0
+    })
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+
+    screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    return mainFrame
+end
+
+function UI:CreateButton(parent, text, callback)
+    local button = createInstance("TextButton", {
+        Parent = parent,
+        Text = text,
+        Size = UDim2.new(1, -20, 0, 50),
+        Position = UDim2.new(0, 10, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 20,
+        BorderSizePixel = 0
+    })
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+function UI:CreateToggle(parent, text, callback)
+    local toggleFrame = createInstance("Frame", {
+        Parent = parent,
+        Size = UDim2.new(1, -20, 0, 50),
+        Position = UDim2.new(0, 10, 0, 120),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0
+    })
+
+    local toggle = createInstance("TextButton", {
+        Parent = toggleFrame,
+        Size = UDim2.new(0, 50, 0, 50),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 20,
+        BorderSizePixel = 0,
+        Text = "Off"
+    })
+    
+    local label = createInstance("TextLabel", {
+        Parent = toggleFrame,
+        Size = UDim2.new(1, -60, 1, 0),
+        Position = UDim2.new(0, 60, 0, 0),
+        BackgroundTransparency = 1,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 20,
+        BorderSizePixel = 0,
+        Text = text,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local toggled = false
+    toggle.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        toggle.Text = toggled and "On" or "Off"
+        callback(toggled)
+    end)
+
+    return toggle
+end
+
+function UI:CreateSlider(parent, text, min, max, callback)
+    local sliderFrame = createInstance("Frame", {
+        Parent = parent,
+        Size = UDim2.new(1, -20, 0, 50),
+        Position = UDim2.new(0, 10, 0, 180),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0
+    })
+
+    local sliderLabel = createInstance("TextLabel", {
+        Parent = sliderFrame,
+        Size = UDim2.new(0, 50, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 20,
+        BorderSizePixel = 0,
+        Text = min,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local sliderBar = createInstance("Frame", {
+        Parent = sliderFrame,
+        Size = UDim2.new(1, -60, 0, 10),
+        Position = UDim2.new(0, 60, 0.5, -5),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        BorderSizePixel = 0
+    })
+
+    local sliderButton = createInstance("TextButton", {
+        Parent = sliderBar,
+        Size = UDim2.new(0, 10, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(150, 150, 150),
+        BorderSizePixel = 0,
+        Text = ""
+    })
+
+    local dragging = false
+    local function updateValue(input)
+        local x = input.Position.X - sliderBar.AbsolutePosition.X
+        local value = math.clamp(x / sliderBar.AbsoluteSize.X, 0, 1)
+        local current = math.floor(min + (max - min) * value)
+        sliderLabel.Text = current
+        sliderButton.Position = UDim2.new(value, -5, 0, 0)
+        callback(current)
+    end
+
+    sliderButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+
+    sliderButton.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateValue(input)
+        end
+    end)
+
+    return sliderFrame
+end
+
+return UI
